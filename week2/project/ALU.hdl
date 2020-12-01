@@ -1,0 +1,51 @@
+// ALU
+
+CHIP ALU {
+    IN  
+        x[16], y[16], // 16-bit inputs        
+        zx, // zero x
+        nx, // negate x
+        zy, // zero y
+        ny, // negate y
+        f,  // func (+ or &)
+        no; // negate out
+
+    OUT 
+        out[16], // 16-bit output
+        zr, // is out zero
+        ng; // is out negate
+
+    PARTS:
+    // x input handling:
+    Mux16(a=x, b=false, sel=zx, out=selectX0);
+    Not16(in=selectX0, out=notSelectX0);
+    Mux16(a=selectX0, b=notSelectX0, sel=nx, out=XResult);
+
+    // y input handling
+    Mux16(a=y, b=false, sel=zy, out=selectY0);
+    Not16(in=selectY0, out=notSelectY0);
+    Mux16(a=selectY0, b=notSelectY0, sel=ny, out=YResult);
+
+    // x&y (case if f = 0) or x+y (case if f = 1)
+    And16(a=XResult, b=YResult, out=xAndY);
+    Add16(a=XResult, b=YResult, out=xPlusY);    
+    Mux16(a=xAndY, b=xPlusY, sel=f, out=funcXY);
+
+    // post-setting the output
+    Not16(in=funcXY, out=notFuncXY);
+    Mux16(a=funcXY, b=notFuncXY, sel=no, out[0..7]=postSettingLSB, out[8..14]=postSettingMSB, out[15]=signBit);
+
+    // collect output from sub-buses postSettingLSB, postSettingMSB and signBit
+    Mux16(a[0..7]=postSettingLSB, a[8..14]=postSettingMSB, a[15]=signBit, b=false, sel=false, out=out);
+
+    // zero and negative flags
+    // Or16Way:
+    Or8Way(in=postSettingLSB, out=first);
+    Or8Way(in[0..6]=postSettingMSB, in[7]=signBit, out=second);
+    Or(a=first, b=second, out=isNotZero);
+    // Or16Way(in[0..7]=postSettingLSB, in[8..14]=postSettingMSB, in[15]=signBit, out=isNotZero);
+    // end Or16Way.
+    Not(in=isNotZero, out=zr);
+    
+    Or(a=signBit, b=false, out=ng);
+}
