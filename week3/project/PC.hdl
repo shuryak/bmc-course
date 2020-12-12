@@ -1,0 +1,30 @@
+// PC
+
+CHIP PC {
+    IN in[16], load, inc, reset;
+    OUT out[16];
+
+    PARTS:
+    /*
+    if reset(t-1) then out(t) = 0
+    else if load(t-1) then out(t) = in(t-1)
+    else if inc(t-1) out(t) = out(t-1) + 1
+    else out(t) = out(t-1)
+    */
+    Inc16(in=preOut, out=incOut);
+
+    /*
+    loadMux may contains two states: out(t-1) + 1 or out(t-1)
+    preResultMux depends on the loadMux and may be reset
+    */
+    Mux16(a=incOut, b=in, sel=load, out=loadMux);
+    Mux16(a=loadMux, b=false, sel=reset, out=preResultMux);
+
+    // incOrLoadOrReset determines if any actions are performed on the input
+    Or(a=inc, b=load, out=incOrLoad);
+    Or(a=incOrLoad, b=reset, out=incOrLoadOrReset);
+
+    Register(in=preResultMux, load=incOrLoadOrReset, out=preOut);
+
+    Or16(a=preOut, b=false, out=out); // dummy gate for output
+}

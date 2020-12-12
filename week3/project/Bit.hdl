@@ -1,0 +1,19 @@
+// Bit
+
+CHIP Bit {
+    IN in, load;
+    OUT out;
+
+    PARTS:
+    /*
+    if load(t-1) then out(t) = in(t-1)
+    else out(t) = out(t-1)
+
+    In the variables of this program:
+
+    if load then out = in
+    else out = pre
+    */
+    Mux(a=pre, b=in, sel=load, out=preOrCurSel);
+    DFF(in=preOrCurSel, out=pre, out=out); // DDFs out is written to two variables
+}
