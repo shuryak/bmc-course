@@ -1,0 +1,23 @@
+name: Build PDF
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run pdf-creator.sh
+        uses: jruipinto/ImageMagick-action@v1
+        with:
+          command: sh ./.github/workflows/pdf-creator.sh
+
+      - name: Upload PDFs to release
+        shell: bash
+        run: gh release upload ${{ github.event.release.tag_name }} ./*.pdf
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
